@@ -1,13 +1,33 @@
 import { Products } from '../models/Products'
 import { Request, Response } from 'express'
 import { handleError } from '../shared/error'
-import { Product, productParamnsSchema, productSchema, productUpdateSchema } from '../schemas/products.schema'
+import { Product, productParamnsSchema, productQuerySchema, productSchema, productUpdateSchema } from '../schemas/products.schema'
+import axios from 'axios'
+import { log } from 'winston'
 
 export const ProductsController = {
     home : (req : Request , res : Response) => {
 
         res.json("caiu aq")
     },
+
+    refreshData: async (req: Request, res: Response) => {
+  
+      try {
+    
+        const response = await axios.get('http://localhost:5000/products?integrate=false');
+
+
+    const data =  productQuerySchema.parse(response.data);
+
+    // Atualiza o SQL aqui
+
+    res.status(200).json({ message: 'Integração manual realizada com sucesso', data });
+  } catch (e) {
+    handleError(res, e);
+  }
+},
+
     register: async (req: Request, res: Response) => {
     try {
         

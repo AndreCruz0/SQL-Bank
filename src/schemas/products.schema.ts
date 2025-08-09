@@ -21,3 +21,19 @@ export const productUpdateSchema = z.object( {
   qty: z.number().int().nonnegative().optional(),
 
 })
+
+export const productQuerySchema = z.array(
+  z.object({
+    _id: z.string().optional(),
+    type: z.string(),
+    qty: z.number(),
+    integrate: z.boolean(),
+    product_id: z.number(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    __v: z.number(),
+  })
+);
+
+
+  
