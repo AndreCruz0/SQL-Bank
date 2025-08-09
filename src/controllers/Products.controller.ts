@@ -15,11 +15,16 @@ export const ProductsController = {
   
       try {
     
-        const response = await axios.get('http://localhost:5000/products?integrate=false');
+      const response = await axios.get('http://localhost:5000/products/integrate?integrate=false');
 
+    if (!response.data || response.data.length === 0) {
+  return res.status(404).json({
+    message: "Não há produtos não integrados"
+  });
+}
 
     const data = productQuerySchema.parse(response.data)
-
+      
     
     // Atualiza o SQL aqui
    const resultTransactions = data.reduce((contador ,item)=> {
@@ -49,8 +54,10 @@ const sqlData = sqlDataInstance.get({ plain: true });
 
 
   await sqlDataInstance.update({ qty: result });
+const updateResponse =  await  axios.put("http://localhost:5000/transactions/integrate")
+  res.status(200).json({ message: 'Integração manual realizada com sucesso', data: sqlDataInstance  , updateInfo : updateResponse.data});
 
-  res.status(200).json({ message: 'Integração manual realizada com sucesso', data: sqlDataInstance });
+  
 
   } catch (e) {
     handleError(res, e);
