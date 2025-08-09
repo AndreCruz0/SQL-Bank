@@ -18,11 +18,40 @@ export const ProductsController = {
         const response = await axios.get('http://localhost:5000/products?integrate=false');
 
 
-    const data =  productQuerySchema.parse(response.data);
+    const data = productQuerySchema.parse(response.data)
 
+    
     // Atualiza o SQL aqui
+   const resultTransactions = data.reduce((contador ,item)=> {
 
-    res.status(200).json({ message: 'Integração manual realizada com sucesso', data });
+    if(item.type === 'entrada' ){ 
+      return contador + item.qty
+        
+    }
+
+     return contador - item.qty
+
+    } ,0 )
+const sqlDataInstance = await Products.findOne({ where: { id: data[0].product_id } });
+
+if (!sqlDataInstance) {
+  
+  return res.status(404).json({ message: 'Produto não encontrado' });
+}
+
+
+const sqlData = sqlDataInstance.get({ plain: true });
+
+
+  const validatedProduct = productSchema.parse(sqlData);
+
+  const result = resultTransactions + validatedProduct.qty;
+
+
+  await sqlDataInstance.update({ qty: result });
+
+  res.status(200).json({ message: 'Integração manual realizada com sucesso', data: sqlDataInstance });
+
   } catch (e) {
     handleError(res, e);
   }
