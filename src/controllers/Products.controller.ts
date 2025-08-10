@@ -57,16 +57,23 @@ export const ProductsController = {
 
     const data =  await Products.findAll()
 
-    res.status(200).json({
+    res.status(200).json(
         data
-    })
+    )
 
   },
 
-  getById: async (req: Request, res: Response) => {
+  getProductByCategoryId: async (req: Request, res: Response) => {
     
       const data = productParamnsSchema.parse(req.params)
    const products =   await Products.findAll({where : {category_id : data.id}})
+      
+      res.status(200).json(products)
+  },
+  getByProductId: async (req: Request, res: Response) => {
+    
+      const data = productParamnsSchema.parse(req.params)
+   const products =   await Products.findAll({where : { id : data.id}})
       
       res.status(200).json(products)
   },
