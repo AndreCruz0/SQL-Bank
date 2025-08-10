@@ -2,11 +2,13 @@ import axios from 'axios';
 import { productQuerySchema, productSchema } from '../schemas/products.schema';
 import { Products } from '../models/Products';
 import Logger from '../shared/logger';
-import { negative } from 'zod';
+import { Op } from 'sequelize'; 
 
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+
 
 export async function refreshProductData() {
   Logger.info('Iniciando atualização dos produtos não integrados.');
@@ -14,8 +16,6 @@ export async function refreshProductData() {
   try {
     await delay(1500);
     Logger.info('Buscando dados do MongoDB...');
-    //adicionar 10 tentativas 
-    //usar logeer.warn  pra nova tentativa e erro com vermelho pra quando da errado 
     const response = await axios.get('http://localhost:5000/products/integrate?integrate=false');
 
     Logger.debug(`Resposta recebida da API MongoDB: ${JSON.stringify(response.data)}`);
@@ -31,47 +31,60 @@ export async function refreshProductData() {
     Logger.info(`Foram encontrados ${data.length} transações para integrar.`);
 
     await delay(1500);
-    const resultTransactions = data.reduce((contador, item) => {
-      if (item.type === 'entrada') {
-        return contador + item.qty;
-      }
-      return contador - item.qty;
-    }, 0);
-    Logger.info(`Cálculo total das transações: ${resultTransactions}`);
 
-    await delay(1500);
-    const sqlDataInstance = await Products.findOne({ where: { id: data[0].product_id } });
+    // Extrai todos os product_id para buscar no SQL
+    const productIds = [...new Set(data.map(item => item.product_id))];
 
-    if (!sqlDataInstance) {
-      Logger.error('Produto não encontrado no banco SQL');
-      throw new Error('Produto não encontrado');
+    const sqlProducts = await Products.findAll({
+      where: { id: { [Op.in]: productIds } }
+    });
+
+    if (sqlProducts.length === 0) {
+      Logger.error('Nenhum produto encontrado no banco SQL');
+      throw new Error('Produtos não encontrados');
     }
-    Logger.info(`Produto encontrado no banco SQL: ID ${data[0].product_id}`);
 
-    const sqlData = sqlDataInstance.get({ plain: true });
-    const validatedProduct = productSchema.parse(sqlData);
+    Logger.info(`Produtos SQL encontrados: ${sqlProducts.map(p => p.id).join(', ')}`);
 
-    const result = resultTransactions + validatedProduct.qty;
+    // Atualiza todos os produtos em paralelo
+    await Promise.all(
+      sqlProducts.map(async product => {
+        // Pega as transações relacionadas a esse produto
+        const relatedTransactions = data.filter(transaction => transaction.product_id === product.id);
 
-    Logger.info(`Quantidade atualizada: ${validatedProduct.qty} + ${resultTransactions} = ${result}`);
+        // Calcula a soma das quantidades, considerando entradas e saídas
+        let quantityChange = 0;
+        for (const transaction of relatedTransactions) {
+          if (transaction.type === 'entrada') {
+            quantityChange += transaction.qty;
+          } else if (transaction.type === 'saida') {
+            quantityChange -= transaction.qty;
+          }
+        }
 
-    await delay(1500);
-    await sqlDataInstance.update({ qty: result });
-    Logger.info('Quantidade do produto atualizada com sucesso no banco SQL');
+        const newQuantity = product.qty + quantityChange;
 
+        // Valida com Zod antes de atualizar
+        const validatedProduct = productSchema.parse({ ...product.get(), qty: newQuantity });
+
+        Logger.info(`Atualizando produto ID ${product.id}: quantidade atual ${product.qty}, alteração ${quantityChange}, nova quantidade ${validatedProduct.qty}`);
+
+        // Atualiza no banco SQL
+        await product.update({ qty: validatedProduct.qty });
+      })
+    );
+
+    Logger.info('Todos os produtos foram atualizados com sucesso.');
+
+    // Atualiza o status das transações no MongoDB
     await delay(1500);
     const updateResponse = await axios.put("http://localhost:5000/transactions/integrate");
     await delay(1500);
     Logger.info(`Status da atualização no MongoDB: ${JSON.stringify(updateResponse.data)}`);
-     await delay(1500);
     Logger.info('Integração manual realizada com sucesso.');
-    await delay(1500);
-    return { message: 'Integração manual realizada com sucesso', data: sqlDataInstance, updateInfo: updateResponse.data };
-    // não vai aparecer no log 
-    // faker vai adicionar dados sim ou não? 
-    // vai adicionar entrada ou saida? 
-    // quantidade aleatoria no mongo
-    //post pra adicionar  n vai colocar put burro
+
+    return { message: 'Integração manual realizada com sucesso', updateInfo: updateResponse.data };
+
   } catch (error) {
     Logger.error('Erro durante a integração:', error);
     throw error;

@@ -33,9 +33,7 @@ try{
     const sucess = Math.random() > 0.1
   
     if(sucess){
-        res.status(200).json({
-            data : categories
-        })   
+        res.status(200).json(categories)   
         return
 }
          res.status(504).json({ message: "serviço indisponivel"})

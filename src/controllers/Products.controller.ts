@@ -5,6 +5,8 @@ import { Product, productParamnsSchema, productQuerySchema, productSchema, produ
 import axios from 'axios'
 import { log } from 'winston'
 import { refreshProductData } from '../services/productIntegration.service'
+import z from 'zod'
+
 
 export const ProductsController = {
     home : (req : Request , res : Response) => {
@@ -62,17 +64,31 @@ export const ProductsController = {
   },
 
   getById: async (req: Request, res: Response) => {
-    res.json({
-      message: "caiu em getById",
-    })
+    
+      const data = productParamnsSchema.parse(req.params)
+   const products =   await Products.findAll({where : {category_id : data.id}})
+      
+      res.status(200).json(products)
   },
   update : async (req : Request , res : Response) => {
 
-    const data =  productUpdateSchema.parse(req.body)
+    const bulkUpdateProductSchema = z.array(productUpdateSchema)
 
-    const params = productParamnsSchema.parse(req.params)
+    try {
+       const data =  bulkUpdateProductSchema.parse(req.body)
 
-    await Products.update(data , {where : {id :  Number(params.id) }})
+       await Promise.all(data.map(async (product)=> {
+        const {id , ...data } = product
+
+        return await Products.update(data, {where : {id : id}})
+
+       }))
+        return res.status(200).json({ message: "Produtos atualizados com sucesso!" });
+        
+    } catch (e) {
+      handleError(res,e)
+    }
+
 
     res.status(200).json({
         message : "O produto foi atualizado com sucesso"
