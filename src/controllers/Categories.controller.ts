@@ -30,7 +30,7 @@ export const CategoriesController = {
 try{
 
     const  categories = await  Category.findAll()
-    const sucess = Math.random() > 0.9
+    const sucess = Math.random() > 0.1
   
     if(sucess){
         res.status(200).json({

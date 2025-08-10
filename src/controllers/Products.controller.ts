@@ -4,6 +4,7 @@ import { handleError } from '../shared/error'
 import { Product, productParamnsSchema, productQuerySchema, productSchema, productUpdateSchema } from '../schemas/products.schema'
 import axios from 'axios'
 import { log } from 'winston'
+import { refreshProductData } from '../services/productIntegration.service'
 
 export const ProductsController = {
     home : (req : Request , res : Response) => {
@@ -15,49 +16,9 @@ export const ProductsController = {
   
       try {
     
-      const response = await axios.get('http://localhost:5000/products/integrate?integrate=false');
+     const result = await refreshProductData()
+     res.status(200).json(result)
 
-    if (!response.data || response.data.length === 0) {
-  return res.status(404).json({
-    message: "Não há produtos não integrados"
-  });
-}
-
-    const data = productQuerySchema.parse(response.data)
-      
-    
-    // Atualiza o SQL aqui
-   const resultTransactions = data.reduce((contador ,item)=> {
-
-    if(item.type === 'entrada' ){ 
-      return contador + item.qty
-        
-    }
-
-     return contador - item.qty
-
-    } ,0 )
-const sqlDataInstance = await Products.findOne({ where: { id: data[0].product_id } });
-
-if (!sqlDataInstance) {
-  
-  return res.status(404).json({ message: 'Produto não encontrado' });
-}
-
-
-const sqlData = sqlDataInstance.get({ plain: true });
-
-
-  const validatedProduct = productSchema.parse(sqlData);
-
-  const result = resultTransactions + validatedProduct.qty;
-
-
-  await sqlDataInstance.update({ qty: result });
-const updateResponse =  await  axios.put("http://localhost:5000/transactions/integrate")
-  res.status(200).json({ message: 'Integração manual realizada com sucesso', data: sqlDataInstance  , updateInfo : updateResponse.data});
-
-  
 
   } catch (e) {
     handleError(res, e);
