@@ -3,107 +3,123 @@ import { Op } from "sequelize";
 import { Products } from "../models/Products";
 import { productQuerySchema, productSchema } from "../schemas/products.schema";
 import Logger from "../shared/logger";
+import { ProductUpdateAttributes } from "../types/products";
 
 function delay(ms: number) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+type Transaction = {
+  _id?: string;
+  type: "entrada" | "saida" | string;
+  qty: number;
+  integrate: boolean;
+  product_id: number;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+};
+
 export async function refreshProductData() {
-	Logger.info("Iniciando atualização dos produtos não integrados.");
+  Logger.info("Iniciando atualização dos produtos não integrados.");
 
-	try {
-		await delay(1500);
-		Logger.info("Buscando dados do MongoDB...");
-		const response = await axios.get(
-			"http://localhost:5000/products/integrate?integrate=false",
-		);
+  try {
+    await delay(1500);
 
-		Logger.debug(
-			`Resposta recebida da API MongoDB: ${JSON.stringify(response.data)}`,
-		);
+    Logger.info("Buscando dados do MongoDB...");
+    const response = await axios.get<Transaction[]>(
+      "http://localhost:5000/products/integrate?integrate=false"
+    );
 
-		await delay(1500);
-		if (!response.data || response.data.length === 0) {
-			Logger.info("Não há produtos não integrados para processar.");
-			return { message: "Não há produtos não integrados" };
-		}
+    Logger.debug(`Resposta da API MongoDB: ${JSON.stringify(response.data)}`);
 
-		Logger.info("Processando transações...");
-		const data = productQuerySchema.parse(response.data);
-		Logger.info(`Foram encontrados ${data.length} transações para integrar.`);
+    await delay(1500);
 
-		await delay(1500);
+    if (!response.data || response.data.length === 0) {
+      Logger.info("Não há produtos não integrados para processar.");
+      return { message: "Não há produtos não integrados" };
+    }
 
-		// Extrai todos os product_id para buscar no SQL
-		const productIds = [...new Set(data.map((item) => item.product_id))];
+    Logger.info("Processando transações...");
+    const data = productQuerySchema.parse(response.data);
 
-		const sqlProducts = await Products.findAll({
-			where: { id: { [Op.in]: productIds } },
-		});
+    Logger.info(`Encontradas ${data.length} transações para integrar.`);
 
-		if (sqlProducts.length === 0) {
-			Logger.error("Nenhum produto encontrado no banco SQL");
-			throw new Error("Produtos não encontrados");
-		}
+    await delay(1500);
 
-		Logger.info(
-			`Produtos SQL encontrados: ${sqlProducts.map((p) => p.id).join(", ")}`,
-		);
+    const productIds = [...new Set(data.map((item) => item.product_id))];
 
-		// Atualiza todos os produtos em paralelo
-		await Promise.all(
-			sqlProducts.map(async (product) => {
-				// Pega as transações relacionadas a esse produto
-				const relatedTransactions = data.filter(
-					(transaction) => transaction.product_id === product.id,
-				);
+    const sqlProducts = await Products.findAll({
+      where: { id: { [Op.in]: productIds } },
+    });
 
-				// Calcula a soma das quantidades, considerando entradas e saídas
-				let quantityChange = 0;
-				for (const transaction of relatedTransactions) {
-					if (transaction.type === "entrada") {
-						quantityChange += transaction.qty;
-					} else if (transaction.type === "saida") {
-						quantityChange -= transaction.qty;
-					}
-				}
+    if (sqlProducts.length === 0) {
+      Logger.error("Nenhum produto encontrado no banco SQL");
+      throw new Error("Produtos não encontrados");
+    }
 
-				const newQuantity = product.qty + quantityChange;
+    Logger.info(
+      `Produtos SQL encontrados: ${sqlProducts.map((p) => p.id).join(", ")}`
+    );
 
-				// Valida com Zod antes de atualizar
-				const validatedProduct = productSchema.parse({
-					...product.get(),
-					qty: newQuantity,
-				});
+    // Monta o array com os updates para bulkCreate
+    const updates = sqlProducts.map((product) => {
+      const relatedTransactions = data.filter(
+        (t) => t.product_id === product.id
+      );
 
-				Logger.info(
-					`Atualizando produto ID ${product.id}: quantidade atual ${product.qty}, alteração ${quantityChange}, nova quantidade ${validatedProduct.qty}`,
-				);
+      let quantityChange = 0;
+      for (const transaction of relatedTransactions) {
+        if (transaction.type === "entrada") quantityChange += transaction.qty;
+        else if (transaction.type === "saida") quantityChange -= transaction.qty;
+      }
 
-				// Atualiza no banco SQL
-				await product.update({ qty: validatedProduct.qty });
-			}),
-		);
+      const newQty = (product.qty ?? 0) + quantityChange;
 
-		Logger.info("Todos os produtos foram atualizados com sucesso.");
+      // Valida o produto atualizado com Zod
+      const validatedProduct = productSchema.parse({
+        ...product.get(),
+        qty: newQty,
+      });
 
-		// Atualiza o status das transações no MongoDB
-		await delay(1500);
-		const updateResponse = await axios.put(
-			"http://localhost:5000/transactions/integrate",
-		);
-		await delay(1500);
-		Logger.info(
-			`Status da atualização no MongoDB: ${JSON.stringify(updateResponse.data)}`,
-		);
-		Logger.info("Integração manual realizada com sucesso.");
+      Logger.info(
+        `Produto ID ${product.id}: qty atual ${product.qty}, alteração ${quantityChange}, nova qty ${validatedProduct.qty}`
+      );
 
-		return {
-			message: "Integração manual realizada com sucesso",
-			updateInfo: updateResponse.data,
-		};
-	} catch (error) {
-		Logger.error("Erro durante a integração:", error);
-		throw error;
-	}
+      // Ensure all required fields are present and 'name' is always a string
+      return {
+        ...product.get(),
+        qty: validatedProduct.qty,
+        name: product.name ?? "", // fallback to empty string if name is undefined
+      };
+    });
+
+  
+    await Products.bulkCreate((updates), {
+      updateOnDuplicate: ["qty"],
+    });
+
+    Logger.info("Todos os produtos foram atualizados com sucesso.");
+
+    await delay(1500);
+
+    const updateResponse = await axios.put(
+      "http://localhost:5000/transactions/integrate"
+    );
+
+    await delay(1500);
+
+    Logger.info(
+      `Status da atualização no MongoDB: ${JSON.stringify(updateResponse.data)}`
+    );
+    Logger.info("Integração  realizada com sucesso.");
+
+    return {
+      message: "Integração manual realizada com sucesso",
+      updateInfo: updateResponse.data,
+    };
+  } catch (error) {
+    Logger.error("Erro durante a integração:", error);
+    throw error;
+  }
 }

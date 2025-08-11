@@ -12,8 +12,6 @@ export const CategoriesController = {
 	register: async (req: Request, res: Response) => {
 		const result = categorySchema.parse(req.body);
 
-		await Category.create(result);
-
 		const newCategory = await Category.create(result);
 
 		const createdCategory: CategoryType = newCategory.get({ plain: true });
