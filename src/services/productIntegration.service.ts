@@ -27,7 +27,7 @@ export async function refreshProductData() {
 
 		Logger.info("Buscando dados do MongoDB...");
 		const response = await axios.get<Transaction[]>(
-			"http://localhost:5000/products/integrate?integrate=false",
+			"http://localhost:5000/transactions/integrate?integrate=false",
 		);
 
 		Logger.debug(`Resposta da API MongoDB: ${JSON.stringify(response.data)}`);
