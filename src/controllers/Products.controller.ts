@@ -50,6 +50,13 @@ export const ProductsController = {
 		res.status(200).json(data);
 	},
 
+  refreshTransactions : async (req: Request, res: Response) => {
+
+    await refreshProductData().then(()=> { res.status(200).json({ message: "Transações atualizadas com sucesso!" }) })
+    //  res.status(200).json({ message: "Transações atualizadas com sucesso!" });
+
+  },
+
 	getProductByCategoryId: async (req: Request, res: Response) => {
 		const data = productParamnsSchema.parse(req.params);
 		const products = await Products.findAll({
