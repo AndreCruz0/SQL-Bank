@@ -30,12 +30,12 @@ export const CategoriesController = {
 try{
 
     const  categories = await  Category.findAll()
-    const sucess = Math.random() > 0.1
+    // const sucess = Math.random() > 0.9
   
-    if(sucess){
+    // if(sucess){
         res.status(200).json(categories)   
         return
-}
+// }
          res.status(504).json({ message: "serviço indisponivel"})
             
 

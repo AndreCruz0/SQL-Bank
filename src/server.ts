@@ -22,7 +22,7 @@ app.use('/products', productsRouter)
 conn.sync()
   .then(async () => {
     app.listen(3001, async () => {
-      console.log("app rodando na porta 3001")
+      Logger.debug("app rodando na porta 3001")
 
       try {
         await runTask()

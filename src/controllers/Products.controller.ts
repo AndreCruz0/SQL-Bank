@@ -81,6 +81,8 @@ export const ProductsController = {
 
     const bulkUpdateProductSchema = z.array(productUpdateSchema)
 
+    Products.create
+    
     try {
        const data =  bulkUpdateProductSchema.parse(req.body)
 
