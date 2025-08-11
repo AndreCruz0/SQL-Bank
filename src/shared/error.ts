@@ -1,13 +1,13 @@
-import type { Response } from 'express';
-import { ZodError } from 'zod';
-import Logger from './logger';
+import type { Response } from "express";
+import { ZodError } from "zod";
+import Logger from "./logger";
 
 export class ApiError extends Error {
 	statusCode: number;
 	constructor(message: string, statusCode = 400) {
 		super(message);
 		this.statusCode = statusCode;
-		this.name = 'ApiError';
+		this.name = "ApiError";
 	}
 }
 
@@ -19,16 +19,16 @@ export function handleError(res: Response, error: unknown) {
 
 	if (error instanceof ZodError) {
 		const issues = error.flatten((issue) => ({
-			path: issue.path.join('.'),
+			path: issue.path.join("."),
 			message: issue.message,
 		}));
-		Logger.warn('Erro de validação', { issues });
+		Logger.warn("Erro de validação", { issues });
 		return res.status(422).json({
-			message: 'Erro de validação',
+			message: "Erro de validação",
 			issues,
 		});
 	}
 
-	Logger.error('Erro inesperado:', error);
-	return res.status(500).json({ message: 'Erro interno do servidor' });
+	Logger.error("Erro inesperado:", error);
+	return res.status(500).json({ message: "Erro interno do servidor" });
 }

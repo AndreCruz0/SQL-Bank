@@ -1,31 +1,32 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsx --watch src/server.ts",
-    "prod" : "tsx --watch --env-file .env src/server.ts"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "axios": "^1.11.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "mysql2": "^3.14.3",
-    "node-cron": "^4.2.1",
-    "sequelize": "^6.37.7",
-    "winston": "^3.17.0",
-    "zod": "^4.0.15"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/mysql": "^2.15.27",
-    "tsx": "^4.20.3"
-  }
+	"name": "backend",
+	"version": "1.0.0",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "tsx --watch --env-file .env.development src/server.ts",
+		"prod": "tsx --watch --env-file .env.production src/server.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"dependencies": {
+		"axios": "^1.11.0",
+		"biome": "^0.3.3",
+		"cors": "^2.8.5",
+		"dotenv": "^17.2.1",
+		"express": "^5.1.0",
+		"mysql2": "^3.14.3",
+		"node-cron": "^4.2.1",
+		"sequelize": "^6.37.7",
+		"winston": "^3.17.0",
+		"zod": "^4.0.15"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.3",
+		"@types/mysql": "^2.15.27",
+		"tsx": "^4.20.3"
+	}
 }
