@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import { Sequelize } from "sequelize";
 import Logger from "../shared/logger";
 
-// Carrega o arquivo certo: .env.development ou .env.production
 dotenv.config({
 	path: `.env.${process.env.NODE_ENV || "development"}`,
 });

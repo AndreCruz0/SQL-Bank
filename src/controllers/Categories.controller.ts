@@ -25,13 +25,8 @@ export const CategoriesController = {
 	list: async (req: Request, res: Response) => {
 		try {
 			const categories = await Category.findAll();
-			// const sucess = Math.random() > 0.9
 
-			// if(sucess){
 			res.status(200).json(categories);
-			return;
-			// }
-			res.status(504).json({ message: "serviço indisponivel" });
 		} catch (e) {
 			handleError(res, e);
 		}

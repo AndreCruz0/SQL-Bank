@@ -3,7 +3,6 @@ import { conn } from "../db/conn";
 import { Products } from "./Products";
 
 export const Category = conn.define("categories", {
-	// plural no nome da tabela
 	name: {
 		type: DataTypes.STRING,
 		allowNull: false,

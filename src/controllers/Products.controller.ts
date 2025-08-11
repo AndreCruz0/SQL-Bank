@@ -36,7 +36,7 @@ export const ProductsController = {
 			const createdProduct: Product = newProduct.get({ plain: true });
 
 			res.status(201).json({
-				message: `Produto criado com sucesso!`,
+				message: "Produto criado com sucesso!",
 				data: createdProduct,
 			});
 		} catch (e) {
