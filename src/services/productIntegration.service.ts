@@ -4,7 +4,6 @@ import { Products } from "../models/Products";
 import { productQuerySchema, productSchema } from "../schemas/products.schema";
 import Logger from "../shared/logger";
 
-
 type Transaction = {
 	_id?: string;
 	type: "entrada" | "saida" | string;
@@ -20,8 +19,6 @@ export async function refreshProductData() {
 	Logger.info("Iniciando atualização dos produtos não integrados.");
 
 	try {
-		
-
 		Logger.info("Buscando dados do MongoDB...");
 		const response = await axios.get<Transaction[]>(
 			"http://localhost:5000/transactions/integrate?integrate=false",
@@ -29,8 +26,6 @@ export async function refreshProductData() {
 
 		Logger.debug(`Resposta da API MongoDB: ${JSON.stringify(response.data)}`);
 
-		
-			
 		if (!response.data || response.data.length === 0) {
 			Logger.info("Não há produtos não integrados para processar.");
 			return { message: "Não há produtos não integrados" };
@@ -40,8 +35,6 @@ export async function refreshProductData() {
 		const data = productQuerySchema.parse(response.data);
 
 		Logger.info(`Encontradas ${data.length} transações para integrar.`);
-
-		
 
 		const productIds = [...new Set(data.map((item) => item.product_id))];
 
@@ -94,13 +87,9 @@ export async function refreshProductData() {
 
 		Logger.info("Todos os produtos foram atualizados com sucesso.");
 
-		
-
 		const updateResponse = await axios.put(
 			"http://localhost:5000/transactions/integrate",
 		);
-
-		
 
 		Logger.info(
 			`Status da atualização no MongoDB: ${JSON.stringify(updateResponse.data)}`,
@@ -108,7 +97,6 @@ export async function refreshProductData() {
 		Logger.info("Integração  realizada com sucesso.");
 		// essa função ira sortear se adiciona ou não itens a rota http://localhost:5000/transactions/create e se sim , ira sortear entre entrada ou saida e quantidade aleatoria de 0 a 10
 
-	
 		return {
 			message: "Integração manual realizada com sucesso",
 			updateInfo: updateResponse.data,

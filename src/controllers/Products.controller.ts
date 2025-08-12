@@ -1,24 +1,22 @@
-import axios from "axios";
 import type { Request, Response } from "express";
-import { log } from "winston";
 import z from "zod";
 import { Products } from "../models/Products";
 import {
 	type Product,
 	productParamnsSchema,
-	productQuerySchema,
 	productSchema,
 	productUpdateSchema,
 } from "../schemas/products.schema";
 import { refreshProductData } from "../services/productIntegration.service";
 import { handleError } from "../shared/error";
+import { productValidations } from "../shared/specificValidatons/forProducts";
 
 export const ProductsController = {
-	home: (req: Request, res: Response) => {
+	home: (_req: Request, res: Response) => {
 		res.json("caiu aq");
 	},
 
-	refreshData: async (req: Request, res: Response) => {
+	refreshData: async (_req: Request, res: Response) => {
 		try {
 			const result = await refreshProductData();
 			res.status(200).json(result);
@@ -31,8 +29,13 @@ export const ProductsController = {
 		try {
 			const result = productSchema.parse(req.body);
 
-			const newProduct = await Products.create(result);
+			const category = await productValidations.ensureCategoryExists(
+				res,
+				result.category_id,
+			);
+			if (!category) return;
 
+			const newProduct = await Products.create(result);
 			const createdProduct: Product = newProduct.get({ plain: true });
 
 			res.status(201).json({
@@ -44,57 +47,79 @@ export const ProductsController = {
 		}
 	},
 
-	list: async (req: Request, res: Response) => {
-		const data = await Products.findAll();
-
-		res.status(200).json(data);
+	list: async (_req: Request, res: Response) => {
+		try {
+			const data = await Products.findAll();
+			res.status(200).json(data);
+		} catch (e) {
+			handleError(res, e);
+		}
 	},
 
-  refreshTransactions : async (req: Request, res: Response) => {
-
-    await refreshProductData().then(()=> { res.status(200).json({ message: "Transações atualizadas com sucesso!" }) })
-    //  res.status(200).json({ message: "Transações atualizadas com sucesso!" });
-
-  },
+	refreshTransactions: async (_req: Request, res: Response) => {
+		try {
+			await refreshProductData();
+			res.status(200).json({ message: "Transações atualizadas com sucesso!" });
+		} catch (e) {
+			handleError(res, e);
+		}
+	},
 
 	getProductByCategoryId: async (req: Request, res: Response) => {
-		const data = productParamnsSchema.parse(req.params);
-		const products = await Products.findAll({
-			where: { category_id: data.id },
-		});
-
-		res.status(200).json(products);
-	},
-	getByProductId: async (req: Request, res: Response) => {
-		const data = productParamnsSchema.parse(req.params);
-		const products = await Products.findAll({ where: { id: data.id } });
-
-		res.status(200).json(products);
-	},
-	update: async (req: Request, res: Response) => {
-		const bulkUpdateProductSchema = z.array(productUpdateSchema);
-
-		Products.create;
-
 		try {
-			const data = bulkUpdateProductSchema.parse(req.body);
+			const data = productParamnsSchema.parse(req.params);
 
-			await Promise.all(
-				data.map(async (product) => {
-					const { id, ...data } = product;
+			const products = await Products.findAll({
+				where: { category_id: data.id },
+			});
+			res.status(200).json(products);
+		} catch (e) {
+			handleError(res, e);
+		}
+	},
 
-					return await Products.update(data, { where: { id: id } });
-				}),
+	getByProductId: async (req: Request, res: Response) => {
+		try {
+			const data = productParamnsSchema.parse(req.params);
+			if (!productValidations.ensureIdProvided(res, data.id)) return;
+
+			const product = await productValidations.ensureProductExists(
+				res,
+				Number(data.id),
 			);
+			if (!product) return;
+
+			res.status(200).json(product);
+		} catch (e) {
+			handleError(res, e);
+		}
+	},
+
+	update: async (req: Request, res: Response) => {
+		try {
+			const bulkUpdateProductSchema = z.array(productUpdateSchema);
+			const data = bulkUpdateProductSchema.parse(req.body);
+			
+			if (!productValidations.validateNoDuplicateIds(res, data)) return;
+
+			await Products.bulkCreate(
+				data.map((p) => ({
+					id: p.id,
+					name: p.name!,
+					category_id: p.category_id!,
+					price: p.price!,
+					qty: p.qty!,
+				})),
+				{
+					updateOnDuplicate: ["name", "price", "qty", "category_id"],
+				},
+			);
+
 			return res
 				.status(200)
 				.json({ message: "Produtos atualizados com sucesso!" });
 		} catch (e) {
 			handleError(res, e);
 		}
-
-		res.status(200).json({
-			message: "O produto foi atualizado com sucesso",
-		});
 	},
 };

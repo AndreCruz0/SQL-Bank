@@ -19,7 +19,6 @@ export async function runTask() {
 	);
 
 	Logger.info("Finalizando integração...");
-	
 
 	Logger.info("Tarefa programada finalizada com sucesso.");
 }
