@@ -1,10 +1,6 @@
 import Logger from "../shared/logger";
 import { refreshProductData } from "./productIntegration.service";
 
-function delay(ms: number) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export async function runTask() {
 	Logger.info("Iniciando tarefa programada  no boot.");
 
@@ -24,6 +20,6 @@ export async function runTask() {
 
 	Logger.info("Finalizando integração...");
 	
-	
+
 	Logger.info("Tarefa programada finalizada com sucesso.");
 }
