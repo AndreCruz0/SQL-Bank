@@ -9,6 +9,8 @@ import { categoriesRouter } from "./routes/Categories";
 import { productsRouter } from "./routes/Products";
 import { runTask } from "./services/runTask.service";
 import Logger from "./shared/logger";
+import swaggerUi from "swagger-ui-express";
+import swaggerDocument from "./swagger.json";
 const app = express();
 
 app.use(express.json());
@@ -20,6 +22,8 @@ app.use(
 );
 app.use("/category", categoriesRouter);
 app.use("/products", productsRouter);
+
+app.use("/docs" , swaggerUi.serve, swaggerUi.setup(swaggerDocument) )
 
 conn
 	.sync()

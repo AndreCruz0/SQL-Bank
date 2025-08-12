@@ -15,7 +15,6 @@ export async function runTask() {
 
 	for (const log of logs) {
 		Logger.info(log);
-		await delay(2000);
 	}
 
 	const result = await refreshProductData();
@@ -23,10 +22,8 @@ export async function runTask() {
 		`Dados atualizados com sucesso: ${JSON.stringify(result, null, 2)}`,
 	);
 
-	await delay(2000);
-
 	Logger.info("Finalizando integração...");
-	await delay(2000);
-
+	
+	
 	Logger.info("Tarefa programada finalizada com sucesso.");
 }
