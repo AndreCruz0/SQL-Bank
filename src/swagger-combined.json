@@ -1,554 +1,507 @@
 {
-	"openapi": "3.0.3",
-	"info": {
-		"title": "API Produtos e Categorias",
-		"version": "1.0.0",
-		"description": "API para gerenciamento de produtos, categorias e transações"
-	},
-	"tags": [
-		{
-			"name": "Produtos",
-			"description": "Operações relacionadas a produtos"
-		},
-		{
-			"name": "Categorias",
-			"description": "Operações relacionadas a categorias"
-		},
-		{
-			"name": "Transações",
-			"description": "Operações relacionadas a transações"
-		}
-	],
-	"paths": {
-		"/products/register": {
-			"post": {
-				"tags": ["Produtos"],
-				"summary": "Cadastrar novo produto",
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": { "$ref": "#/components/schemas/ProductInput" }
-						}
-					}
-				},
-				"responses": {
-					"201": {
-						"description": "Produto criado com sucesso",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ProductResponse" }
-							}
-						}
-					},
-					"400": {
-						"description": "Erro na requisição",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					},
-					"422": {
-						"description": "Erro de validação",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ValidationErrorResponse"
-								}
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					},
-					"504": {
-						"description": "Gateway Timeout",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"/products/list": {
-			"get": {
-				"tags": ["Produtos"],
-				"summary": "Listar todos os produtos",
-				"responses": {
-					"200": {
-						"description": "Lista de produtos",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "array",
-									"items": { "$ref": "#/components/schemas/Product" }
-								}
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"/products/refreshTransactions": {
-			"get": {
-				"tags": ["Transações"],
-				"summary": "Atualizar transações (integração com MongoDB)",
-				"responses": {
-					"200": {
-						"description": "Transações atualizadas com sucesso",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"message": {
-											"type": "string",
-											"example": "Transações atualizadas com sucesso!"
-										}
-									}
-								}
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"/products/bulk-update": {
-			"put": {
-				"tags": ["Produtos"],
-				"summary": "Atualizar vários produtos em lote",
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"type": "array",
-								"items": { "$ref": "#/components/schemas/ProductUpdate" }
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Produtos atualizados com sucesso",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"message": {
-											"type": "string",
-											"example": "Produtos atualizados com sucesso!"
-										}
-									}
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Erro de validação",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ValidationErrorResponse"
-								}
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"/products/category/{id}": {
-			"get": {
-				"tags": ["Produtos"],
-				"summary": "Buscar produtos por categoria",
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"description": "ID da categoria",
-						"required": true,
-						"schema": { "type": "string" }
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Produtos da categoria",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "array",
-									"items": { "$ref": "#/components/schemas/Product" }
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "ID inválido",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"/products/{id}": {
-			"get": {
-				"tags": ["Produtos"],
-				"summary": "Buscar produto por ID",
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"description": "ID do produto",
-						"required": true,
-						"schema": { "type": "string" }
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Produto encontrado",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/Product" }
-							}
-						}
-					},
-					"400": {
-						"description": "ID inválido",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-
-		"/categories/create": {
-			"post": {
-				"tags": ["Categorias"],
-				"summary": "Criar nova categoria",
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": { "$ref": "#/components/schemas/CategoryInput" }
-						}
-					}
-				},
-				"responses": {
-					"201": {
-						"description": "Categoria criada com sucesso",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/CategoryResponse" }
-							}
-						}
-					},
-					"400": {
-						"description": "Erro na requisição",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					},
-					"422": {
-						"description": "Erro de validação",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ValidationErrorResponse"
-								}
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"/categories/list": {
-			"get": {
-				"tags": ["Categorias"],
-				"summary": "Listar todas as categorias",
-				"responses": {
-					"200": {
-						"description": "Lista de categorias",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "array",
-									"items": { "$ref": "#/components/schemas/Category" }
-								}
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"/categories/{id}": {
-			"get": {
-				"tags": ["Categorias"],
-				"summary": "Buscar categoria por ID",
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"description": "ID da categoria",
-						"required": true,
-						"schema": { "type": "string" }
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Categoria encontrada",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/Category" }
-							}
-						}
-					},
-					"400": {
-						"description": "ID inválido",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"/categories/update/{id}": {
-			"put": {
-				"tags": ["Categorias"],
-				"summary": "Atualizar categoria",
-				"parameters": [
-					{
-						"name": "id",
-						"in": "path",
-						"description": "ID da categoria",
-						"required": true,
-						"schema": { "type": "string" }
-					}
-				],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": { "$ref": "#/components/schemas/CategoryUpdate" }
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Categoria atualizada com sucesso",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"message": {
-											"type": "string",
-											"example": "Item atualizado com sucesso"
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Erro na requisição",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					},
-					"422": {
-						"description": "Erro de validação",
-						"content": {
-							"application/json": {
-								"$ref": "#/components/schemas/ValidationErrorResponse"
-							}
-						}
-					},
-					"500": {
-						"description": "Erro interno do servidor",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/ErrorResponse" }
-							}
-						}
-					}
-				}
-			}
-		}
-	},
-	"components": {
-		"schemas": {
-			"ProductInput": {
-				"type": "object",
-				"required": ["name", "category_id", "price", "qty"],
-				"properties": {
-					"name": { "type": "string", "example": "Produto X" },
-					"category_id": { "type": "integer", "example": 1 },
-					"price": { "type": "number", "format": "float", "example": 100.5 },
-					"qty": { "type": "integer", "example": 50 }
-				}
-			},
-			"Product": {
-				"type": "object",
-				"properties": {
-					"id": { "type": "integer", "example": 10 },
-					"name": { "type": "string", "example": "Produto X" },
-					"category_id": { "type": "integer", "example": 1 },
-					"price": { "type": "number", "format": "float", "example": 100.5 },
-					"qty": { "type": "integer", "example": 50 }
-				}
-			},
-			"ProductResponse": {
-				"type": "object",
-				"properties": {
-					"message": {
-						"type": "string",
-						"example": "Produto criado com sucesso!"
-					},
-					"data": { "$ref": "#/components/schemas/Product" }
-				}
-			},
-			"ProductUpdate": {
-				"type": "object",
-				"required": ["id"],
-				"properties": {
-					"id": { "type": "integer", "example": 10 },
-					"name": { "type": "string" },
-					"category_id": { "type": "integer" },
-					"price": { "type": "number", "format": "float" },
-					"qty": { "type": "integer" }
-				}
-			},
-			"CategoryInput": {
-				"type": "object",
-				"required": ["name"],
-				"properties": {
-					"name": { "type": "string", "example": "Eletrônicos" }
-				}
-			},
-			"Category": {
-				"type": "object",
-				"properties": {
-					"id": { "type": "integer", "example": 1 },
-					"name": { "type": "string", "example": "Eletrônicos" }
-				}
-			},
-			"CategoryResponse": {
-				"type": "object",
-				"properties": {
-					"message": {
-						"type": "string",
-						"example": "Categoria criada com sucesso"
-					},
-					"data": { "$ref": "#/components/schemas/Category" }
-				}
-			},
-			"CategoryUpdate": {
-				"type": "object",
-				"properties": {
-					"name": { "type": "string" }
-				}
-			},
-			"ErrorResponse": {
-				"type": "object",
-				"properties": {
-					"message": { "type": "string", "example": "Mensagem de erro" }
-				}
-			},
-			"ValidationErrorResponse": {
-				"type": "object",
-				"properties": {
-					"message": { "type": "string", "example": "Erro de validação" },
-					"issues": {
-						"type": "object",
-						"example": { "field": "Campo obrigatório" }
-					}
-				}
-			}
-		}
-	}
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API de Produtos E Categorias",
+    "version": "1.0.0",
+    "description": "API para gerenciamento de produtos, categorias e transações"
+  },
+  "tags": [
+    { "name": "Produtos", "description": "Operações relacionadas a produtos" },
+    { "name": "Categorias", "description": "Operações relacionadas a categorias" }
+  ],
+  "paths": {
+    "/products/register": {
+      "post": {
+        "tags": ["Produtos"],
+        "summary": "Cadastrar novo produto",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductInput" },
+              "examples": {
+                "produtoExemplo": {
+                  "value": {
+                    "name": "Produto A",
+                    "category_id": 3,
+                    "price": 150.5,
+                    "qty": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Produto criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProductResponse" },
+                "example": {
+                  "message": "Produto criado com sucesso!",
+                  "data": {
+                    "id": 1,
+                    "name": "Produto A",
+                    "category_id": 3,
+                    "price": 150.5,
+                    "qty": 10
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": {
+            "description": "Categoria não encontrada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "message": "Categoria com ID 3 não existe." }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/products/list": {
+      "get": {
+        "tags": ["Produtos"],
+        "summary": "Listar todos os produtos",
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Product" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/products/refresh": {
+      "get": {
+        "tags": ["Produtos"],
+        "summary": "Atualizar dados dos produtos",
+        "responses": {
+          "200": {
+            "description": "Dados atualizados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" },
+                "example": { "message": "Dados atualizados com sucesso." }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/products/refreshTransactions": {
+      "get": {
+        "tags": ["Produtos"],
+        "summary": "Atualizar transações dos produtos",
+        "responses": {
+          "200": {
+            "description": "Transações atualizadas com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" },
+                "example": { "message": "Transações atualizadas com sucesso!" }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/products/bulk-update": {
+      "put": {
+        "tags": ["Produtos"],
+        "summary": "Atualizar vários produtos em lote",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/ProductUpdateInput" }
+              },
+              "examples": {
+                "atualizacaoExemplo": {
+                  "value": [
+                    { "id": 1, "name": "Produto A atualizado", "price": 200.0 },
+                    { "id": 2, "qty": 15 }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Produtos atualizados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" },
+                "example": { "message": "Produtos atualizados com sucesso!" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/products/category/{id}": {
+      "get": {
+        "tags": ["Produtos"],
+        "summary": "Buscar produtos por ID da categoria",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "ID da categoria para filtrar produtos"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos da categoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Product" }
+                }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "tags": ["Produtos"],
+        "summary": "Buscar produto por ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "ID do produto"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto encontrado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Product" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": {
+            "description": "Produto não encontrado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "message": "Produto com ID 123 não existe." }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/categories/create": {
+      "post": {
+        "tags": ["Categorias"],
+        "summary": "Criar nova categoria",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CategoryInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Categoria criada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CategoryResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/categories/list": {
+      "get": {
+        "tags": ["Categorias"],
+        "summary": "Listar todas as categorias",
+        "responses": {
+          "200": {
+            "description": "Lista de categorias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Category" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "get": {
+        "tags": ["Categorias"],
+        "summary": "Buscar categoria por ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID da categoria",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categoria encontrada",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Category" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/categories/update/{id}": {
+      "put": {
+        "tags": ["Categorias"],
+        "summary": "Atualizar categoria",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID da categoria",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CategoryUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Categoria atualizada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Item atualizado com sucesso" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProductInput": {
+        "type": "object",
+        "required": ["name", "category_id", "price", "qty"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "example": "Produto A" },
+          "category_id": { "type": "integer", "minimum": 1, "example": 3 },
+          "price": { "type": "number", "minimum": 0.01, "maximum": 99999.99, "example": 150.5 },
+          "qty": { "type": "integer", "minimum": 0, "example": 10 }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "example": "Produto A" },
+          "category_id": { "type": "integer", "example": 3 },
+          "price": { "type": "number", "example": 150.5 },
+          "qty": { "type": "integer", "example": 10 }
+        }
+      },
+      "ProductResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Operação realizada com sucesso" },
+          "data": { "$ref": "#/components/schemas/Product" }
+        }
+      },
+      "ProductUpdateInput": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "minLength": 3, "example": "Produto Atualizado" },
+          "category_id": { "type": "integer", "example": 2 },
+          "price": { "type": "number", "example": 199.9 },
+          "qty": { "type": "integer", "example": 20 }
+        }
+      },
+      "CategoryInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "example": "Eletrônicos" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "example": "Eletrônicos" }
+        }
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Categoria criada com sucesso" },
+          "data": { "$ref": "#/components/schemas/Category" }
+        }
+      },
+      "CategoryUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Mensagem de erro" }
+        }
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Erro de validação" },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": { "type": "string", "example": "price" },
+                "message": { "type": "string", "example": "O preço deve ser positivo." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Requisição inválida. Verifique os parâmetros enviados.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "message": "O campo 'id' do produto é obrigatório." }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Erro de validação. Um ou mais campos não atendem aos requisitos definidos.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ValidationErrorResponse" },
+            "example": {
+              "message": "Erro de validação",
+              "issues": [
+                { "path": "id", "message": "O ID do produto deve ser um número válido." },
+                { "path": "name", "message": "O nome do produto é obrigatório." }
+              ]
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Recurso ou rota não encontrada.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "message": "Rota inválida." }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Erro interno do servidor.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "message": "Erro inesperado. Tente novamente mais tarde." }
+          }
+        }
+      },
+      "GatewayTimeout": {
+        "description": "Tempo limite de resposta excedido.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "message": "O servidor demorou muito para responder." }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Acesso não autorizado. Token inválido ou ausente.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "message": "Token de autenticação inválido." }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Acesso negado. O usuário não possui permissão para realizar esta ação.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "message": "Você não tem permissão para acessar este recurso." }
+          }
+        }
+      }
+    }
+  }
 }

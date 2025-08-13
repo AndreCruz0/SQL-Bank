@@ -48,4 +48,9 @@ cron.schedule("*/5 * * * *", async () => {
 	} catch (error) {
 		Logger.error("Erro durante a tarefa agendada:", error);
 	}
+})
+
+
+app.use((_req, res) => {
+	res.status(404).json({ message: "Rota não encontrada" });
 });

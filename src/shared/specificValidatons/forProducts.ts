@@ -1,4 +1,3 @@
-// src/validations/specificValidations/forProducts.ts
 import type { Response } from "express";
 import { Category } from "../../models/Categories";
 import { Products } from "../../models/Products";
@@ -32,7 +31,6 @@ export const productValidations = {
 		const ids = data.map((p) => p.id); 
 		const uniqueIds = new Set(ids); 
 		if (uniqueIds.size !== ids.length) {
-			// 3
 			res.status(400).json({ message: "IDs duplicados no request" }); 
 			return false; 
 		}
