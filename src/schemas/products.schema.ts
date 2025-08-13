@@ -16,7 +16,7 @@ export const productParamnsSchema = z.object({
 export const productUpdateSchema = z.object({
 	id: z.number(),
 	name: z.string().min(3 , {message : "Quantidade minima de 3 caracter"}).optional(),
-	category_id: z.number().optional(),
+	category_id: z.number(),
 	price: z.number().optional(),
 	qty: z.number().optional(),
 });

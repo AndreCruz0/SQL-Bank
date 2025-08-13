@@ -137,8 +137,9 @@
               "examples": {
                 "atualizacaoExemplo": {
                   "value": [
-                    { "id": 1, "name": "Produto A atualizado", "price": 200.0 },
-                    { "id": 2, "qty": 15 }
+                    { "id": 1, "name": "Produto A atualizado", "price": 200.0  ,"category_id" : 1},
+                    { "id": 2, "name": "Produto B atualizado", "price": 250.0  ,"category_id" : 1}
+                 
                   ]
                 }
               }
@@ -373,7 +374,7 @@
       },
       "ProductUpdateInput": {
         "type": "object",
-        "required": ["id"],
+        "required": ["id" ,"category_id"], 
         "properties": {
           "id": { "type": "integer", "example": 1 },
           "name": { "type": "string", "minLength": 3, "example": "Produto Atualizado" },
