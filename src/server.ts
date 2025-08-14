@@ -11,7 +11,6 @@ import { categoriesRouter } from "./routes/Categories";
 import { productsRouter } from "./routes/Products";
 import { runTask } from "./services/runTask.service";
 import Logger from "./shared/logger";
-import swaggerCombined from "./swagger-combined.json";
 import scalarApiReference, { apiReference } from "@scalar/express-api-reference";
 
 const app = express();
@@ -23,7 +22,7 @@ app.use(express.json());
 app.use(connectionMiddleware);
 app.use(cors({ origin: FRONTEND_URL }));
 
-// Serve arquivo swagger estático
+
 app.use('/swagger-combined.json', express.static(path.join(__dirname, 'swagger-combined.json')));
 
 app.use("/categories", categoriesRouter);
