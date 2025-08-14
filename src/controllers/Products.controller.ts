@@ -10,12 +10,9 @@ import {
 import { refreshProductData } from "../services/productIntegration.service";
 import { handleError } from "../shared/error";
 import { productValidations } from "../shared/specificValidatons/forProducts";
+import { categoriesValidations } from "../shared/specificValidatons/forCategories";
 
 export const ProductsController = {
-	home: (_req: Request, res: Response) => {
-		res.json("caiu aq");
-	},
-
 	refreshData: async (_req: Request, res: Response) => {
 		try {
 			const result = await refreshProductData();
@@ -28,12 +25,17 @@ export const ProductsController = {
 	register: async (req: Request, res: Response) => {
 		try {
 			const result = productSchema.parse(req.body);
-
+			
 			const category = await productValidations.ensureCategoryExists(
 				res,
 				result.category_id,
 			);
 			if (!category) return;
+			const isUnique = await productValidations.ensureProductNameUnique(
+				res,
+				result.name,
+			);
+			if(!isUnique) return;
 
 			const newProduct = await Products.create(result);
 			const createdProduct: Product = newProduct.get({ plain: true });
@@ -101,6 +103,7 @@ export const ProductsController = {
 			const data = bulkUpdateProductSchema.parse(req.body);
 			
 			if (!productValidations.validateNoDuplicateIds(res, data)) return;
+			// if(!categoriesValidations.ensureCategoryExistsForBulk(res,data.map(p=> p.category_id))) return
 
 			await Products.bulkCreate(
 				data.map((p) => ({

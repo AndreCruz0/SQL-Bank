@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import { Category } from "../../models/Categories";
 import { Products } from "../../models/Products";
+import en from "zod/v4/locales/en.cjs";
 
 export const productValidations = {
 	async ensureCategoryExists(res: Response, categoryId: number) {
@@ -12,6 +13,19 @@ export const productValidations = {
 			return null;
 		}
 		return category;
+	},
+
+	async ensureProductNameUnique(res: Response, name: string) {
+	
+
+		const product = await Products.findOne({ where :  {name}});
+		if (product) {
+			res
+				.status(409)
+				.json({ message: `Produto com nome "${name}" já existe.` });
+			return false;
+		}
+		return true;
 	},
 
 	async ensureProductExists(res: Response, productId: number | string) {

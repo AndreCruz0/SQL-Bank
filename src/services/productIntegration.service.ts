@@ -95,7 +95,7 @@ export async function refreshProductData() {
 			`Status da atualização no MongoDB: ${JSON.stringify(updateResponse.data)}`,
 		);
 		Logger.info("Integração  realizada com sucesso.");
-		// essa função ira sortear se adiciona ou não itens a rota http://localhost:5000/transactions/create e se sim , ira sortear entre entrada ou saida e quantidade aleatoria de 0 a 10
+
 
 		return {
 			message: "Integração manual realizada com sucesso",
