@@ -30,7 +30,6 @@ jest.mock('../shared/specificValidatons/forProducts', () => ({
   },
 }));
 
-// ---- Imports depois dos mocks ----
 import type { Request, Response } from 'express';
 import { ProductsController } from '../controllers/Products.controller';
 import { Products } from '../models/Products';

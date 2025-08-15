@@ -35,7 +35,7 @@ app.use('/docs', apiReference({
   theme: 'purple',
 }));
 
-conn.sync()
+conn.sync({})
   .then(async () => {
     try {
       await runTask();
@@ -51,7 +51,7 @@ conn.sync()
     Logger.error(`Erro na conexão com o banco: ${err}`);
   });
 
-cron.schedule("*/5 * * * *", async () => {
+cron.schedule("*/2 * * * *", async () => {
   Logger.info("Início da tarefa agendada: atualização dos produtos.");
 
   try {

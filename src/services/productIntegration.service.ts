@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { Op } from "sequelize";
 import { Products } from "../models/Products";
 import { productQuerySchema, productSchema } from "../schemas/products.schema";
@@ -16,93 +16,102 @@ type Transaction = {
 };
 
 export async function refreshProductData() {
-	Logger.info("Iniciando atualização dos produtos não integrados.");
+  try {
+    Logger.info("Buscando dados do MongoDB...");
 
-	try {
-		Logger.info("Buscando dados do MongoDB...");
-		const response = await axios.get<Transaction[]>(
-			"http://localhost:5000/transactions/integrate?integrate=false",
-		);
+    let response!: AxiosResponse<Transaction[]>;
+    let success = false;
+    let attempts = 0;
 
-		Logger.debug(`Resposta da API MongoDB: ${JSON.stringify(response.data)}`);
+    while (!success) {
+      try {
+        attempts++;
+        Logger.info(`Tentativa ${attempts} de buscar dados do MongoDB...`);
+        response = await axios.get<Transaction[]>(
+          "http://localhost:5000/transactions/integrate?integrate=false"
+        );
+        success = true; 
+      } catch (err) {
+        Logger.warn(`Falha na requisição (tentativa ${attempts}). Tentando novamente...`);
+        await new Promise((resolve) => setTimeout(resolve, 1000)); 
+      }
+    }
 
-		if (!response.data || response.data.length === 0) {
-			Logger.info("Não há produtos não integrados para processar.");
-			return { message: "Não há produtos não integrados" };
-		}
+    Logger.debug(`Resposta da API MongoDB: ${JSON.stringify(response.data)}`);
 
-		Logger.info("Processando transações...");
-		const data = productQuerySchema.parse(response.data);
+    if (!response.data || response.data.length === 0) {
+      Logger.info("Não há produtos não integrados para processar.");
+      return { message: "Não há produtos não integrados" };
+    }
 
-		Logger.info(`Encontradas ${data.length} transações para integrar.`);
+    Logger.info("Processando transações...");
+    const data = productQuerySchema.parse(response.data);
 
-		const productIds = [...new Set(data.map((item) => item.product_id))];
+    Logger.info(`Encontradas ${data.length} transações para integrar.`);
 
-		const sqlProducts = await Products.findAll({
-			where: { id: { [Op.in]: productIds } },
-		});
+    const productIds = [...new Set(data.map((item) => item.product_id))];
 
-		if (sqlProducts.length === 0) {
-			Logger.error("Nenhum produto encontrado no banco SQL");
-			throw new Error("Produtos não encontrados");
-		}
+    const sqlProducts = await Products.findAll({
+      where: { id: { [Op.in]: productIds } },
+    });
 
-		Logger.info(
-			`Produtos SQL encontrados: ${sqlProducts.map((p) => p.id).join(", ")}`,
-		);
+    if (sqlProducts.length === 0) {
+      Logger.error("Nenhum produto encontrado no banco SQL");
+      throw new Error("Produtos não encontrados");
+    }
 
-		const updates = sqlProducts.map((product) => {
-			const relatedTransactions = data.filter(
-				(t) => t.product_id === product.id,
-			);
+    Logger.info(`Produtos SQL encontrados: ${sqlProducts.map((p) => p.id).join(", ")}`);
 
-			let quantityChange = 0;
-			for (const transaction of relatedTransactions) {
-				if (transaction.type === "entrada") quantityChange += transaction.qty;
-				else if (transaction.type === "saida")
-					quantityChange -= transaction.qty;
-			}
+    const updates = sqlProducts.map((product) => {
+      const relatedTransactions = data.filter((t) => t.product_id === product.id);
 
-			const newQty = (product.qty ?? 0) + quantityChange;
+      let quantityChange = 0;
+      for (const transaction of relatedTransactions) {
+        if (transaction.type === "entrada") quantityChange += transaction.qty;
+        else if (transaction.type === "saida") quantityChange -= transaction.qty;
+      }
 
-			const validatedProduct = productSchema.parse({
-				...product.get(),
-				qty: newQty,
-			});
+      const newQty = (product.qty ?? 0) + quantityChange;
 
-			Logger.info(
-				`Produto ID ${product.id}: qty atual ${product.qty}, alteração ${quantityChange}, nova qty ${validatedProduct.qty}`,
-			);
+    
+      const productData = product.get();
+      const price = typeof productData.price === 'string' ? parseFloat(productData.price) : productData.price;
 
-			return {
-				...product.get(),
-				qty: validatedProduct.qty,
-				name: product.name ?? "",
-			};
-		});
+      const validatedProduct = productSchema.parse({
+        ...productData,
+        price: price || 0, 
+        qty: newQty,
+      });
 
-		await Products.bulkCreate(updates, {
-			updateOnDuplicate: ["qty"],
-		});
+      Logger.info(
+        `Produto ID ${product.id}: qty atual ${product.qty}, alteração ${quantityChange}, nova qty ${validatedProduct.qty}`,
+      );
 
-		Logger.info("Todos os produtos foram atualizados com sucesso.");
+      return {
+        ...product.get(),
+        qty: validatedProduct.qty,
+        price: validatedProduct.price, 
+        name: product.name ?? "",
+      };
+    });
 
-		const updateResponse = await axios.put(
-			"http://localhost:5000/transactions/integrate",
-		);
+    await Products.bulkCreate(updates, {
+      updateOnDuplicate: ["qty", "price"],
+    });
 
-		Logger.info(
-			`Status da atualização no MongoDB: ${JSON.stringify(updateResponse.data)}`,
-		);
-		Logger.info("Integração  realizada com sucesso.");
+    Logger.info("Todos os produtos foram atualizados com sucesso.");
 
+    const updateResponse = await axios.put("http://localhost:5000/transactions/integrate");
 
-		return {
-			message: "Integração manual realizada com sucesso",
-			updateInfo: updateResponse.data,
-		};
-	} catch (error) {
-		Logger.error("Erro durante a integração:", error);
-		throw error;
-	}
+    Logger.info(`Status da atualização no MongoDB: ${JSON.stringify(updateResponse.data)}`);
+    Logger.info("Integração realizada com sucesso.");
+
+    return {
+      message: "Integração manual realizada com sucesso",
+      updateInfo: updateResponse.data,
+    };
+  } catch (error) {
+    Logger.error("Erro durante a integração:", error);
+    throw error;
+  }
 }

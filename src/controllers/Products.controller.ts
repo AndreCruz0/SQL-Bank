@@ -103,7 +103,9 @@ export const ProductsController = {
 			const data = bulkUpdateProductSchema.parse(req.body);
 			
 			if (!productValidations.validateNoDuplicateIds(res, data)) return;
-			if(!categoriesValidations.ensureExitsId(res,data.map(p=> p.category_id))) return
+
+			const categoriesExist = await categoriesValidations.ensureExitsId(res, data.map(p => p.category_id));
+			if (categoriesExist === null) return;
 
 			await Products.bulkCreate(
 				data.map((p) => ({
@@ -111,7 +113,7 @@ export const ProductsController = {
 					name: p.name,
 					category_id: p.category_id,
 					price: p.price || 0,
-					qty: p.qty|| 0,
+					qty: p.qty || 0,
 				})),
 				{
 					updateOnDuplicate: ["name", "price", "qty", "category_id"],
